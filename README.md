@@ -5,22 +5,24 @@
 coco-backend/
 ├── src/
 │ ├── config/
-│ │ └── database.ts  
+│ │ └── database.ts
 │ ├── models/
-│ │ ├── User.ts # User model with password hashing
-│ │ ├── Job.ts # Job model
-│ │ └── Category.ts # Category model
+│ │ ├── User.ts
+│ │ ├── Job.ts
+│ │ └── Category.ts
 │ ├── controllers/
-│ │ ├── authController.ts # Login/Register logic
-│ │ ├── jobController.ts # CRUD for jobs
-│ │ └── categoryController.ts # CRUD for categories
+│ │ ├── authController.ts
+│ │ ├── jobController.ts
+│ │ └── categoryController.ts
 │ ├── routes/
-│ │ ├── authRoutes.ts # /api/auth routes
-│ │ ├── jobRoutes.ts # /api/jobs routes
-│ │ └── categoryRoutes.ts # /api/categories routes
+│ │ ├── authRoutes.ts
+│ │ ├── jobRoutes.ts
+│ │ └── categoryRoutes.ts
 │ ├── middleware/
-│ │ └── auth.ts # JWT authentication
-│ └── server.ts # Main Express app
-├── .env # Environment variables
-├── tsconfig.json # TypeScript config
-└── package.json # Dependencies
+│ │ └── auth.ts
+│ └── server.ts
+├── .env
+├── .gitignore
+├── package.json
+├── package-lock.json
+└── tsconfig.json
