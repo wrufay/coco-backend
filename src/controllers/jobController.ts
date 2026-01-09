@@ -21,6 +21,7 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
     await job.save();
     res.status(201).json(job);
   } catch (error) {
+    console.error('Create job error:', error);
     res.status(500).json({ error: 'Failed to create job' });
   }
 };
