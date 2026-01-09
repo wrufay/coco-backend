@@ -58,38 +58,120 @@ Return ONLY valid JSON, no additional text.`;
   }
 };
 
-// Categorize job based on status
+// Categorize all jobs by role type
 export const categorizeJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { company, role, notes, currentStatus } = req.body;
+    const { jobs } = req.body;
 
-    if (!company || !role) {
-      res.status(400).json({ error: 'Company and role are required' });
+    if (!jobs || !Array.isArray(jobs) || jobs.length === 0) {
+      res.status(400).json({ error: 'Jobs array is required' });
       return;
     }
 
-    const prompt = `Based on the following job information, suggest the most appropriate status category:
-Company: ${company}
-Role: ${role}
-Notes: ${notes || 'None'}
-Current Status: ${currentStatus || 'Unknown'}
+    const jobsList = jobs.map((job, idx) =>
+      `${idx}: ${job.role} at ${job.company}`
+    ).join('\n');
 
-Available status categories:
-- Wishlist: Jobs you're interested in but haven't applied yet
-- Applied: Jobs you've submitted applications for
-- Interview: Jobs where you have scheduled or completed interviews
-- Offer: Jobs where you've received an offer
-- Rejected: Jobs where you've been rejected or declined
+    const prompt = `Categorize these jobs into role-based categories (like "Software Engineering", "Product Manager", "Design", "Data Science", etc.).
 
-Analyze the information and return ONLY a JSON object with this structure:
+Jobs:
+${jobsList}
+
+Return ONLY a JSON object with this structure:
 {
-  "suggestedStatus": "one of the status categories above",
-  "reason": "brief explanation for the suggestion"
+  "categories": [
+    {
+      "name": "Category Name",
+      "jobIds": [array of job _id values that belong to this category]
+    }
+  ]
+}
+
+Use the actual _id values from the jobs provided. Group similar roles together.`;
+
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 2048,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+        {
+          role: 'assistant',
+          content: 'Here are the job details with their IDs:\n' + jobs.map((job, idx) =>
+            `${idx}: ID=${job._id}, Role=${job.role}, Company=${job.company}`
+          ).join('\n'),
+        },
+        {
+          role: 'user',
+          content: 'Now categorize them using their actual _id values.',
+        },
+      ],
+    });
+
+    const content = message.content[0];
+    if (content.type === 'text') {
+      const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const result = JSON.parse(jsonMatch[0]);
+        res.json(result);
+      } else {
+        res.status(500).json({ error: 'Failed to categorize jobs' });
+      }
+    } else {
+      res.status(500).json({ error: 'Unexpected response format' });
+    }
+  } catch (error) {
+    console.error('Categorize jobs error:', error);
+    res.status(500).json({ error: 'Failed to categorize jobs' });
+  }
+};
+
+// Analyze resume against jobs
+export const analyzeResume = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { resumeText, jobs } = req.body;
+
+    if (!resumeText) {
+      res.status(400).json({ error: 'Resume text is required' });
+      return;
+    }
+
+    if (!jobs || !Array.isArray(jobs) || jobs.length === 0) {
+      res.status(400).json({ error: 'Jobs array is required' });
+      return;
+    }
+
+    const jobsList = jobs.map(job =>
+      `• ${job.role} at ${job.company} (${job.location}, ${job.type})`
+    ).join('\n');
+
+    const prompt = `You are a career advisor analyzing a resume against job applications.
+
+Resume:
+${resumeText}
+
+Jobs Applied To:
+${jobsList}
+
+Provide a comprehensive analysis as an HTML string with:
+1. Overall assessment of the resume quality
+2. How well the resume matches the types of roles applied to
+3. Key strengths that align with these positions
+4. Gaps or missing skills for these roles
+5. Specific, actionable suggestions to improve the resume for these applications
+
+Format your response as HTML with proper styling. Use headings, lists, and emphasis where appropriate. Make it visually appealing and easy to read.
+
+Return ONLY a JSON object with this structure:
+{
+  "analysis": "<complete HTML string here>"
 }`;
 
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 512,
+      max_tokens: 4096,
       messages: [
         {
           role: 'user',
@@ -104,73 +186,6 @@ Analyze the information and return ONLY a JSON object with this structure:
       if (jsonMatch) {
         const result = JSON.parse(jsonMatch[0]);
         res.json(result);
-      } else {
-        res.status(500).json({ error: 'Failed to categorize job' });
-      }
-    } else {
-      res.status(500).json({ error: 'Unexpected response format' });
-    }
-  } catch (error) {
-    console.error('Categorize job error:', error);
-    res.status(500).json({ error: 'Failed to categorize job' });
-  }
-};
-
-// Analyze resume and provide suggestions
-export const analyzeResume = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { resumeText, jobDescription } = req.body;
-
-    if (!resumeText) {
-      res.status(400).json({ error: 'Resume text is required' });
-      return;
-    }
-
-    const prompt = jobDescription
-      ? `Analyze the following resume against this job description and provide feedback:
-
-Job Description:
-${jobDescription}
-
-Resume:
-${resumeText}
-
-Provide a JSON response with:
-{
-  "matchScore": number (0-100),
-  "strengths": array of strings (key strengths that match the job),
-  "gaps": array of strings (missing skills or experience),
-  "suggestions": array of strings (specific improvements to make)
-}`
-      : `Analyze the following resume and provide general feedback:
-
-Resume:
-${resumeText}
-
-Provide a JSON response with:
-{
-  "strengths": array of strings (key strengths),
-  "improvements": array of strings (areas to improve),
-  "suggestions": array of strings (specific recommendations)
-}`;
-
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 2048,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
-
-    const content = message.content[0];
-    if (content.type === 'text') {
-      const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const analysis = JSON.parse(jsonMatch[0]);
-        res.json(analysis);
       } else {
         res.status(500).json({ error: 'Failed to analyze resume' });
       }
