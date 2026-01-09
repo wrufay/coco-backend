@@ -5,7 +5,6 @@ export interface IUser extends Document {
   email: string;
   password: string;
   name: string;
-  claudeApiKey?: string;
   createdAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -27,10 +26,6 @@ const userSchema = new Schema<IUser>({
     type: String,
     required: true,
     trim: true
-  },
-  claudeApiKey: {
-    type: String,
-    select: false // Don't return API key by default
   },
   createdAt: {
     type: Date,

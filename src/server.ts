@@ -5,6 +5,7 @@ import { connectDB } from './config/database';
 import authRoutes from './routes/authRoutes';
 import jobRoutes from './routes/jobRoutes';
 import categoryRoutes from './routes/categoryRoutes';
+import claudeRoutes from './routes/claudeRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/claude', claudeRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
