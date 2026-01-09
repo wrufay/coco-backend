@@ -17,12 +17,12 @@ export const extractJob = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     const prompt = `Extract job information from the following text and return it as a JSON object with these fields:
+- title (string): Job title/role
 - company (string): Company name
-- role (string): Job title/role
 - location (string): Job location
 - type (string): One of "Remote", "Hybrid", or "On-site"
 - deadline (string): Application deadline if mentioned, otherwise empty string
-- notes (string): Any additional important details
+- requirements (string): Key requirements, qualifications, or important details about the role
 
 Text to analyze:
 ${text || `Job posting URL: ${url}`}
