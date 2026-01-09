@@ -30,7 +30,7 @@ ${text || `Job posting URL: ${url}`}
 Return ONLY valid JSON, no additional text.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 1024,
       messages: [
         {
@@ -90,7 +90,7 @@ Return ONLY a JSON object with this structure:
 Use the actual _id values from the jobs provided. Group similar roles together.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 2048,
       messages: [
         {
@@ -170,7 +170,7 @@ Return ONLY a JSON object with this structure:
 }`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 4096,
       messages: [
         {
